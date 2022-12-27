@@ -10,7 +10,7 @@ log() {
 
 err() {
     /sbin/busybox echo "[ERROR]init: $2" > /dev/kmsg
-    /sbin/busybox exit $1
+    exec /sbin/busybox exit $1
 }
 
 #splash
@@ -21,7 +21,7 @@ err() {
 /sbin/udevadm trigger --action=add    --type=subsystems || err 1 'udevadm: action: add; type: subsystems'
 /sbin/udevadm trigger --action=add    --type=devices || err 1 'udevadm: action: add; type: devices'
 /sbin/udevadm trigger --action=change --type=devices || err 1 'udevadm: action: change; type: devices'
-/sbin/udevadm settle 5 || err 1 'udevadm settle'
+/sbin/udevadm settle || err 1 'udevadm: settle'
 
 #support for "super" partition(system, vendor and product in 1 partition)
 /sbin/dmsetup mknodes || err 1 'dmsetup: mknodes'
