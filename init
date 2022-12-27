@@ -24,39 +24,43 @@ err() {
 /sbin/udevadm settle || err 1 'udevadm: settle'
 
 #support for "super" partition(system, vendor and product in 1 partition)
-/sbin/dmsetup mknodes || err 1 'dmsetup: mknodes'
+#/sbin/dmsetup mknodes || err 1 'dmsetup: mknodes'
 
 
 
 #found vendorpart in cmdline
 for param in $(/sbin/busybox cat /proc/cmdline) ; do
     case "${param}" in
-        vendorpart=*)
-            vendorpart="${param#vendorpart=}"
+        userdatapart=*)
+            userdatapart="${param#userdatapart=}"
             ;;
     esac
 done
 
-if /sbin/busybox [ "x$vendorpart" == "x" ]
+if /sbin/busybox [ "x$userdatapart" == "x" ]
 then
-	err 1 "vendorpart is not set!"
+	err 1 "userdatapart is not set!"
 fi
 
-if /sbin/busybox [ ! -f "$vendorpart" ]
+if /sbin/busybox [ ! -f "$userdatapart" ]
 then
-	err 1 "vendorpart set uncorrectly!"
+	err 1 "userdatapart set uncorrectly!"
 fi
 
-#mount vendor partition
-/sbin/busybox mount $vendorpart /vendor || err 1 "mount vendor"
+#mount userdata partition
+/sbin/busybox mount $userdatapart /data || err 1 "mount userdata"
 
 #mount partitions
-/sbin/busybox mount -T /vendor/etc/fstab.vendor /system || err 1 "mount rootfs"
-/sbin/busybox mount -T /vendor/etc/fstab.vendor /data || err 1 "mount userdata"
+#/sbin/busybox mount -T /vendor/etc/fstab.vendor /system || err 1 "mount rootfs"
+#/sbin/busybox mount -T /vendor/etc/fstab.vendor /data || err 1 "mount userdata"
+/sbin/busybox [ ! -f "/data/ohios/rootfs.img" ] || err 1 "/data/ohios/rootfs.img not exists!"
+/sbin/busybox [ ! -f "/data/ohios/vendor.img" ] || err 1 "/data/ohios/vendor.img not exists!"
+/sbin/busybox mount /data/ohios/rootfs.img /system -o ro || err 1 "mount rootfs"
+/sbin/busybox mount /data/ohios/vendor.img /vendor -o ro || err 1 "mount vendor"
 
 #creating data layout
-/sbin/busybox mkdir /data/ohioos/data -p
-/sbin/busybox mkdir /data/ohioos/workdir -p
+/sbin/busybox mkdir /data/ohios/data -p
+/sbin/busybox mkdir /data/ohios/workdir -p
 
 #creating root using overlayfs
 #/sbin/busybox mount -t overlay -o lowerdir=/system:/vendor,upperdir=/data/ohioos/data,workdir=/data/ohioos/workdir overlay /newroot || err 1 "create overlayfs"
