@@ -1,0 +1,66 @@
+#!/sbin/busybox sh
+#mount partitions
+/sbin/busybox mount -t proc proc /proc
+/sbin/busybox mount -t devtmpfs devtmpfs /dev
+
+#functions
+log() {
+    /sbin/busybox echo "[LOG] init: $1" > /dev/kmsg
+}
+
+err() {
+    /sbin/busybox echo "[ERROR]init: $2" > /dev/kmsg
+    /sbin/busybox exit $1
+}
+
+#splash
+/sbin/busybox fbsplash -s splash.ppm || log 'fbsplash'
+
+#udev
+/sbin/udevd --daemon || err 1 'udevd'
+/sbin/udevadm trigger --action=add    --type=subsystems || err 1 'udevadm: action: add; type: subsystems'
+/sbin/udevadm trigger --action=add    --type=devices || err 1 'udevadm: action: add; type: devices'
+/sbin/udevadm trigger --action=change --type=devices || err 1 'udevadm: action: change; type: devices'
+/sbin/udevadm settle 5 || err 1 'udevadm settle'
+
+#support for "super" partition(system, vendor and product in 1 partition)
+/sbin/dmsetup mknodes || err 1 'dmsetup: mknodes'
+
+
+
+#found vendorpart in cmdline
+for param in $(/sbin/busybox cat /proc/cmdline) ; do
+    case "${param}" in
+        vendorpart=*)
+            vendorpart="${param#vendorpart=}"
+            ;;
+    esac
+done
+
+if /sbin/busybox [ "x$vendorpart" == "x" ]
+then
+	err 1 "vendorpart is not set!"
+fi
+
+if /sbin/busybox [ ! -f "$vendorpart" ]
+then
+	err 1 "vendorpart set uncorrectly!"
+fi
+
+#mount vendor partition
+/sbin/busybox mount $vendorpart /vendor || err 1 "mount vendor"
+
+#mount partitions
+/sbin/busybox mount -T /vendor/etc/fstab.vendor /system || err 1 "mount rootfs"
+/sbin/busybox mount -T /vendor/etc/fstab.vendor /data || err 1 "mount userdata"
+
+#creating data layout
+/sbin/busybox mkdir /data/ohioos/data -p
+/sbin/busybox mkdir /data/ohioos/workdir -p
+
+#creating root using overlayfs
+#/sbin/busybox mount -t overlay -o lowerdir=/system:/vendor,upperdir=/data/ohioos/data,workdir=/data/ohioos/workdir overlay /newroot || err 1 "create overlayfs"
+/sbin/fuse-overlayfs-aarch64 -o lowerdir=/system:/vendor,upperdir=/data/ohioos/data,workdir=/data/ohioos/workdir overlay /newroot || err 1 "create overlayfs"
+
+#end
+exec /sbin/busybox switch_root /newroot /sbin/init
