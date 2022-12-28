@@ -53,8 +53,8 @@ fi
 #mount partitions
 #/sbin/busybox mount -T /vendor/etc/fstab.vendor /system || err 1 "mount rootfs"
 #/sbin/busybox mount -T /vendor/etc/fstab.vendor /data || err 1 "mount userdata"
-/sbin/busybox [ ! -f "/data/ohios/rootfs.img" ] || err 1 "/data/ohios/rootfs.img not exists!"
-/sbin/busybox [ ! -f "/data/ohios/vendor.img" ] || err 1 "/data/ohios/vendor.img not exists!"
+/sbin/busybox [ ! -f "/data/ohios/rootfs.img" ] && err 1 "/data/ohios/rootfs.img not exists!"
+/sbin/busybox [ ! -f "/data/ohios/vendor.img" ] && err 1 "/data/ohios/vendor.img not exists!"
 /sbin/busybox mount /data/ohios/rootfs.img /system -o ro || err 1 "mount rootfs"
 /sbin/busybox mount /data/ohios/vendor.img /vendor -o ro || err 1 "mount vendor"
 
