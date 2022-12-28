@@ -9,7 +9,7 @@ log() {
 }
 
 err() {
-    /sbin/busybox echo "[ERROR]init: $2" > /dev/kmsg
+    /sbin/busybox echo "[ERROR] init: $2" > /dev/kmsg
     exec /sbin/busybox exit $1
 }
 
@@ -24,43 +24,39 @@ err() {
 /sbin/udevadm settle || err 1 'udevadm: settle'
 
 #support for "super" partition(system, vendor and product in 1 partition)
-#/sbin/dmsetup mknodes || err 1 'dmsetup: mknodes'
+/sbin/dmsetup mknodes || err 1 'dmsetup: mknodes'
 
 
 
 #found vendorpart in cmdline
 for param in $(/sbin/busybox cat /proc/cmdline) ; do
     case "${param}" in
-        userdatapart=*)
-            userdatapart="${param#userdatapart=}"
+        vendorpart=*)
+            vendorpart="${param#vendorpart=}"
             ;;
     esac
 done
 
-if /sbin/busybox [ "x$userdatapart" == "x" ]
+if /sbin/busybox [ "x$vendorpart" == "x" ]
 then
-	err 1 "userdatapart is not set!"
+	err 1 "vendorpart is not set!"
 fi
 
-if /sbin/busybox [ ! -f "$userdatapart" ]
+if /sbin/busybox [ ! -n "$vendorpart" ]
 then
-	err 1 "userdatapart set uncorrectly!"
+	err 1 "vendorpart set uncorrectly!"
 fi
 
-#mount userdata partition
-/sbin/busybox mount $userdatapart /data || err 1 "mount userdata"
+#mount vendor partition
+/sbin/busybox mount $vendorpart /vendor || err 1 "mount vendor"
 
 #mount partitions
-#/sbin/busybox mount -T /vendor/etc/fstab.vendor /system || err 1 "mount rootfs"
-#/sbin/busybox mount -T /vendor/etc/fstab.vendor /data || err 1 "mount userdata"
-/sbin/busybox [ ! -f "/data/ohios/rootfs.img" ] && err 1 "/data/ohios/rootfs.img not exists!"
-/sbin/busybox [ ! -f "/data/ohios/vendor.img" ] && err 1 "/data/ohios/vendor.img not exists!"
-/sbin/busybox mount /data/ohios/rootfs.img /system -o ro || err 1 "mount rootfs"
-/sbin/busybox mount /data/ohios/vendor.img /vendor -o ro || err 1 "mount vendor"
+/sbin/busybox mount -T /vendor/etc/fstab.vendor /system || err 1 "mount rootfs"
+/sbin/busybox mount -T /vendor/etc/fstab.vendor /data || err 1 "mount userdata"
 
 #creating data layout
-/sbin/busybox mkdir /data/ohios/data -p
-/sbin/busybox mkdir /data/ohios/workdir -p
+/sbin/busybox mkdir /data/ohioos/data -p
+/sbin/busybox mkdir /data/ohioos/workdir -p
 
 #creating root using overlayfs
 #/sbin/busybox mount -t overlay -o lowerdir=/system:/vendor,upperdir=/data/ohioos/data,workdir=/data/ohioos/workdir overlay /newroot || err 1 "create overlayfs"
