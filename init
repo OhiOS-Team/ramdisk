@@ -55,12 +55,12 @@ fi
 /sbin/busybox mount -T /vendor/etc/fstab.vendor /data || err 1 "mount userdata"
 
 #creating data layout
-/sbin/busybox mkdir /data/ohioos/data -p
-/sbin/busybox mkdir /data/ohioos/workdir -p
+/sbin/busybox mkdir /data/ohios/data -p
+/sbin/busybox mkdir /data/ohios/workdir -p
 
 #creating root using overlayfs
-#/sbin/busybox mount -t overlay -o lowerdir=/system:/vendor,upperdir=/data/ohioos/data,workdir=/data/ohioos/workdir overlay /newroot || err 1 "create overlayfs"
-/sbin/fuse-overlayfs-aarch64 -o lowerdir=/system:/vendor,upperdir=/data/ohioos/data,workdir=/data/ohioos/workdir overlay /newroot || err 1 "create overlayfs"
+#/sbin/busybox mount -t overlay -o lowerdir=/system:/vendor,upperdir=/data/ohios/data,workdir=/data/ohios/workdir overlay /newroot || err 1 "create overlayfs"
+/sbin/fuse-overlayfs-aarch64 -o lowerdir=/system:/vendor,upperdir=/data/ohios/data,workdir=/data/ohios/workdir overlay /newroot || err 1 "create overlayfs"
 
 #end
 exec /sbin/busybox switch_root /newroot /sbin/init
